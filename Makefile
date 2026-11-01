@@ -1,7 +1,8 @@
-
 CXX = g++
+# Define the resource compiler
+RC = windres
 
-TARGET = CyzonVSModManager.exe
+TARGET = CyzonVSMM.exe
 
 CXXFLAGS = -std=c++17 -O2 -Wall -Wextra
 
@@ -33,18 +34,28 @@ SOURCES = main.cpp \
 
 OBJECTS = $(SOURCES:.cpp=.o)
 
-all: $(TARGET)
+# 1. Define your resource source and compiled output object
+RC_SOURCE = resource.rc
+RC_OBJECT = resource.res
 
-$(TARGET): $(OBJECTS)
-	$(CXX) $(OBJECTS) $(LIB_DIRS) $(LIBS) -o $(TARGET)
+build: $(TARGET)
+
+# 2. Append $(RC_OBJECT) to both the dependencies and the compiler execution command
+$(TARGET): $(OBJECTS) $(RC_OBJECT)
+	$(CXX) $(OBJECTS) $(RC_OBJECT) $(LIB_DIRS) $(LIBS) -o $(TARGET)
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
+# 3. Add a pattern rule to compile your .rc file into a COFF object (.res)
+$(RC_OBJECT): $(RC_SOURCE)
+	$(RC) $(RC_SOURCE) -O coff -o $(RC_OBJECT)
+
 clean:
 	del /Q $(TARGET) 2>NUL || exit 0
+	del /Q $(RC_OBJECT) 2>NUL || exit 0
 	for /R %%f in (*.o) do del /Q "%%f" 2>NUL
 
-rebuild: clean all
+rebuild: clean build
 
-.PHONY: all clean rebuild
+.PHONY: build clean rebuild
